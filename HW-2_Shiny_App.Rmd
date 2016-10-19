@@ -1,6 +1,6 @@
 ---
 title: "MATH 216 Homework 2 Shiny App"
-author: "WRITE YOUR NAME HERE"
+author: "James Burke"
 output: html_document
 runtime: shiny
 ---
@@ -20,28 +20,79 @@ You can embed Shiny inputs and outputs in your document. Outputs are automatical
 
 ```{r eruptions, echo=FALSE}
 inputPanel(
-  
-  # Input name
-  textInput("name", label = "Enter Name:", value="Jane"),
-  # Input start year
-  numericInput("start_year", label = "Start Year:", value = 1880, min = 1880, max = 2014, step = 1),
-  # Input end year
-  numericInput("end_year", label = "End Year:", value = 2014, min = 1880, max = 2014, step = 1)
-  
+  # Input genre
+  radioButtons("genre", label = "Genre:", c("Comedy", "Non-Comedy"), 
+               select = "Comedy", inline = TRUE) #,
+  # Input chart type
+  # radioButtons("chart", label = "Chart Type:", c("Bar", "Line"), 
+  #              select = "Bar", inline = TRUE)
+    ### CAN YOU USE IF STATEMENTS TO SPECIFY DIFFERENT GGPLOTS? ###
+    ### Tried using an ifelse statement for ggplot but the result was a table output in the console
 )
+
+# Used for creating budget buckets: 
+    # quantile(chart_movies$budget, c(.1, .2, .3, .4, .5, .6, .7, .8, .9, 1))
 
 renderPlot({
   
-  # Pretend Inputs
-  input_name <- "Albert"
-  input_start_year <- 1880
-  input_end_year <- 2014
+  # Fake Inputs
+  input_genre = "Comedy"
+  input_chart = "Line"
   
-  # Generate Plots
-  names <- babynames %>%
-    filter(name == input$name & year >= input$start_year & year <= input$end_year )
-  ggplot(data=names, aes(x=year, y=prop, col=sex)) + 
-    geom_line()
+  bar_chart_movies <- movies %>%
+    select(rating, budget, Comedy) %>%
+    filter(!is.na(budget)) %>%
+    mutate(
+      bucket = ifelse(budget >= 43000000, "9. 43000+",
+               ifelse(budget >= 20000000 & budget < 43000000, "8. 20000-43000",
+               ifelse(budget >= 11820000 & budget < 20000000, "7. 11820-20000",
+               ifelse(budget >= 5500000 & budget < 11820000, "6. 5500-11820",
+               ifelse(budget >= 3000000 & budget < 5500000, "5. 3000-5500",
+               ifelse(budget >= 1200000 & budget < 3000000, "4. 1200-3000",
+               ifelse(budget >= 500000 & budget < 1200000, "3. 500-1200",
+               ifelse(budget >= 125000 & budget < 500000, "2. 125-500",
+               ifelse(budget >= 25000 & budget < 125000, "1. 25-125", "0. 0-25"
+    )))))))))) %>%
+    filter(Comedy == ifelse(input$genre == "Comedy", 1, 0)) %>%
+    group_by(bucket) %>%
+    summarise(mean_rate = mean(rating))
   
+  # box_chart_movies <- movies %>%
+  #   select(rating, budget, Comedy) %>%
+  #   filter(!is.na(budget)) %>%
+  #   mutate(
+  #     bucket = ifelse(budget >= 43000000, "9. 43000+",
+  #              ifelse(budget >= 20000000 & budget < 43000000, "8. 20000-43000",
+  #              ifelse(budget >= 11820000 & budget < 20000000, "7. 11820-20000",
+  #              ifelse(budget >= 5500000 & budget < 11820000, "6. 5500-11820",
+  #              ifelse(budget >= 3000000 & budget < 5500000, "5. 3000-5500",
+  #              ifelse(budget >= 1200000 & budget < 3000000, "4. 1200-3000",
+  #              ifelse(budget >= 500000 & budget < 1200000, "3. 500-1200",
+  #              ifelse(budget >= 125000 & budget < 500000, "2. 125-500",
+  #              ifelse(budget >= 25000 & budget < 125000, "1. 25-125", "0. 0-25"
+  #   )))))))))) %>%
+  #   filter(Comedy == ifelse(input$genre == "Comedy", 1, 0))
+
+  # line_chart_movies <- movies %>%
+  #   select(rating, budget, Comedy) %>%
+  #   filter(!is.na(budget)) %>%
+  #   filter(Comedy == ifelse(input$genre == "Comedy", 1, 0)) %>%
+  #   group_by(budget) %>%
+  #   summarise(mean_rate = mean(rating))
+    
+  
+  ggplot(data = bar_chart_movies, aes(x = bucket, y = mean_rate)) +
+    geom_bar(stat = "identity") +
+    ylim(0, 10) +
+    labs(x = "Budget Quantile (000s)", y = "Mean Rating", title = "IMDb Movie Ratings by Budget")
+
+  # ggplot(data = box_chart_movies, aes(x = bucket, y = rating)) +
+  #   geom_boxplot(color = "dark blue", fill = "light blue") +
+  #   ylim(0, 10) +
+  #   labs(x = "Budget Quantile (000s)", y = "Rating", title = "IMDb Movie Ratings by Budget")
+
+  # ggplot(data = line_chart_movies, aes(x = budget, y = mean_rate)) + 
+  #   geom_line() +
+  #   labs(x = "Budget", y = "Rating", title = "IMDb Movie Ratings by Budget")
 })
 ```

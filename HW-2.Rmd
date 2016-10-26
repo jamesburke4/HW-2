@@ -57,16 +57,19 @@ q1_profiles <- profiles %>%
     job = as.factor(job),
     # Recoding certain job categories:
     job = fct_recode(job, 
-                    "not working" = "unemployed",
-                    "not working" = "student",
-                    "not working" = "retired",
-                    "undisclosed" = "rather not say",
+                    "not working / undisclosed" = "unemployed",
+                    "not working / undisclosed" = "student",
+                    "not working / undisclosed" = "retired",
+                    "not working / undisclosed" = "rather not say",
                     "entertainment" = "entertainment / media",
                     "entertainment" = "artistic / musical / writer",
-#                    "STEM" = "science / tech / engineering",
-#                    "STEM" = "computer / hardware / software",
-                    "travel / transportation" = "transportation",
-                    "travel / transportation" = "hospitality / travel"
+                    "miscellaneous" = "military",
+                    "miscellaneous" = "political / government",
+                    "miscellaneous" = "clerical / administrative",
+                    "miscellaneous" = "law / legal services",
+                    "miscellaneous" = "construction / craftsmanship",
+                    "miscellaneous" = "transportation",
+                    "miscellaneous" = "hospitality / travel"
                 ),    
     orientation = as.factor(orientation),
     sex = as.factor(sex),
@@ -78,23 +81,31 @@ q1_profiles <- profiles %>%
   )
 ```
 
-I have modified the profiles dataset to include only the variables of interest for this analysis. I also grouped some of the jobobservations to try to cut down on the number of categories we have to observe. I grouped unemployed, student and retired into "not working" since none of the three options represent people that have a job. I contemplated leaving retired out of this group, but there were so few retired users in the dataset that I left them in the "not working" group. I also contemplated grouping "science / tech / engineering" and "computer / hardware / software" into one category called "STEM," but I left them separate since each category represents a relatively large number of users.
+I have modified the profiles dataset to include only the variables of interest for this analysis. I also grouped some of the job observations to try to cut down on the number of categories we have to observe. I grouped unemployed, student and retired into "not working" since none of the three options represent people that have a job. I contemplated leaving retired out of this group, but there were so few retired users in the dataset that I left them in the "not working" group. I grouped all jobs that had fewer than 2000 observations into a "miscellaneous" category to limit the number of job categories for analysis. I also contemplated grouping "science / tech / engineering" and "computer / hardware / software" into one category called "STEM," but I left them separate since each category represents a relatively large number of users.
 
 ### Job
 
 ```{r, echo=FALSE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
-profiles_jobs <- q1_profiles %>% 
-  filter(!is.na(job)) %>%
-  group_by(job, sex) %>% 
-  count(job)
+profiles_jobs <- q1_profiles %>%
+  group_by(sex, job) %>%
+  summarise(n = n()) %>% 
+  mutate(
+    prop = n/sum(n),
+    prop = round(prop, 2)
+  )
 
 ggplot(data = profiles_jobs, aes(x = fct_reorder(f=job, x=n, fun=max), y = n, fill = sex)) + 
   geom_bar(stat = "identity", position = "dodge") +
-  labs(x = "Job", y = "Number of Users", title = "Jobs by Gender") +
+  labs(x = "Job", y = "Number of Users", title = "Number of Jobs by Gender") +
+  theme(axis.text.x = element_text(angle = -60, hjust = 0))
+
+ggplot(data = profiles_jobs, aes(x = fct_reorder(f=job, x=n, fun=max), y = prop, fill = sex)) + 
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Job", y = "Proportion", title = "Proportion of Jobs by Gender") +
   theme(axis.text.x = element_text(angle = -60, hjust = 0))
 ```
 
-Observing the distribution of jobs from the sample, as well as their breakdown by gender, a couple points stand out. First of all, The fact that "computer / hardware / software" and "science / tech / engineering" are two of the most common occupations should not be surprising, but the number of men in the sample compared to the number of women is drastic. Besides "construction / craftsmanship" and "military," each representing a small group of users, no other occupation comes close to the proportion of men that these two show. Additionally, only three categories include more men than women, "clerical / administrative," "education / academia," and "medicine / health." We know our sample is made up of more men than women, but with the significant difference of gender in the aforementioned occupations, I thought more than three categories would have a women majority. Lastly, the number of people who described their jobs as “other” surprised me. The number of categories provided seems to be sufficient in covering the wide array of occupations, so I would think that the "other" category should be much smaller.
+Observing the distribution of jobs from the sample, as well as their breakdown by gender, a couple points stand out. First of all, The fact that "computer / hardware / software" and "science / tech / engineering" are two of the most common occupations should not be surprising, but the number of men in the sample compared to the number of women is drastic. Additionally, only two categories include more women than men, "education / academia" and "medicine / health." We know our sample is made up of more men than women, but with the significant difference of gender in the aforementioned occupations, I thought more than three categories would have a women majority. Lastly, the number of people who described their jobs as “other” surprised me. The number of categories provided seems to be sufficient in covering the wide array of occupations, so I would think that the "other" category should be much smaller.
 
 ### Income
 
@@ -111,7 +122,7 @@ ggplot(data = prop_report, aes(x = fct_reorder(f=job, x=prop, fun=max, .desc = T
   theme(axis.text.x = element_text(angle = -60, hjust = 0))
 ```
 
-Before looking at the breakdown of income, I think it is important to note the types of people who were disclosing their income. Only 11,504 people out of nearly 60,000 reported positive income. The chart shows an interesting trend: some of the typically higher paying jobs saw a lower proportion of people report their incomes. For example, the financial, legal, medical, and science/tech/engineering jobs are all on the lower end of the spectrum, compared to lower-paying occupations such as construction/craftsmanship, travel/transportation, and clerical/administrative which had a higher proportion of people report their income. Another point to note is that about 25% of males and 15% of females who fall in the "not working" category reported income.
+Before looking at the breakdown of income, I think it is important to note the types of people who were disclosing their income. Only 11,504 people out of nearly 60,000 reported positive income. The chart shows an interesting trend: some of the typically higher paying jobs saw a lower proportion of people report their incomes. For example, the financial, medical, and science/tech/engineering jobs are all on the lower end of the spectrum, compared to lower-paying occupations included in miscellaneous such as construction/craftsmanship, travel/transportation, and clerical/administrative which had a higher proportion of people report their income. Another point to note is that about 25% of males and 15% of females who fall in the "not working / undisclosed" category reported income.
 
 ```{r, echo=FALSE, message=TRUE, warning=FALSE, fig.width=8, fig.height=4.5}
 profiles_inc <- q1_profiles %>% 
@@ -120,11 +131,10 @@ profiles_inc <- q1_profiles %>%
 ggplot(data = profiles_inc, aes(x = sex, y = income)) + 
   geom_boxplot(color = "dark blue", fill = "light blue") +
   labs(x = "Gender", y = "Income", title = "Reported Income by Gender") +
-  ylim(0, 150000) +
-  coord_flip()
+  coord_cartesian(ylim = (c(0, 150000)))
 ```
 
-The boxplots show a slight edge in median income for men, as well as a higher 1st and 3rd quartile. Interestingly, the minimum and 1st quartile for women are the same (20,000). These plots do not show outliers that represent incomes greater than 150,000, but a deeper look at these 718 people reveals an interesting trend.
+The boxplots show an edge in median income for men, as well as a higher 1st and 3rd quartile. Interestingly, the minimum and 1st quartile for women are the same (20,000). These plots do not show outliers that represent incomes greater than 150,000, but a deeper look at these 718 people reveals an interesting trend.
 
 ```{r, echo=FALSE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
 # 718 people reported more than $150,000 for income
@@ -136,16 +146,16 @@ output %>% kable()
 
 employed <- profiles_inc %>% 
   filter(income > 150000) %>% 
-  mutate(Employment = ifelse(job == "not working", "Not Employed", 
-                             ifelse(job == "undisclosed" | job == "other", 
-                                    "Undisclosed / Other", "Specified Occupation")
+  mutate(Employment = ifelse(job == "not working / undisclosed", "Not Employed / Undisclosed", 
+                             ifelse(job == "other", "Other", 
+                                    "Specified Occupation")
                              )
          ) %>%
   count(Employment)
 employed %>% kable()
 ```
 
-As the above table shows, only 490 of 718 people who reported more income of more than 150,000 specified their occupation in their profile. That leaves 228 people who did not specify their job but reported high levels of income. This includes 85 people who reported not having a job reporting income of more than 150,000. This questions the accuracy of income reporting from the sample, especially those who didn't report employment but reported income.
+As the above table shows, only 490 of 718 people who reported income of more than 150,000 specified their occupation in their profile. That leaves 228 people who did not specify their job but reported high levels of income. This includes 100 people who reported not having a job or "would rather not say" but reported income of more than 150,000. This questions the accuracy of income reporting from the sample, especially those who didn't report employment but reported income.
 
 ### Orientation
 
@@ -159,10 +169,15 @@ profiles_orient <- q1_profiles %>%
 
 orient_chart_1 <- profiles_orient %>%
   group_by(sex, orientation) %>% 
-  count(orientation)
+  summarise(n = n()) %>% 
+  mutate(
+    prop = n/sum(n),
+    prop = round(prop, 2)
+  ) %>% 
+  filter(orientation != "straight")
 
-ggplot(data = orient_chart_1, aes(x = sex, y = n, fill = orientation)) + 
-  geom_bar(stat = "identity", position = "fill") +
+ggplot(data = orient_chart_1, aes(x = sex, y = prop, fill = orientation)) + 
+  geom_bar(stat = "identity", position = "dodge") +
   labs(x = "Gender", y = "Proportion of Users", title = "Orientation by Gender")
 ```
 
@@ -170,16 +185,21 @@ The breakdown of sexual orientation by gender shows that there is a much higher 
 
 ```{r, echo=FALSE, message=TRUE, warning=TRUE, fig.width=8, fig.height=4.5}
 orient_chart_2 <- profiles_orient %>%
-  group_by(bucket, sex, orientation) %>% 
-  count(orientation)
+  group_by(sex, bucket, orientation) %>% 
+  summarise(n = n()) %>% 
+  mutate(
+    prop = n/sum(n),
+    prop = round(prop, 2)
+  ) %>% 
+  filter(orientation != "straight")
 
-ggplot(data = orient_chart_2, aes(x = bucket, y = n, fill = orientation)) + 
-  geom_bar(stat = "identity", position = "fill") +
+ggplot(data = orient_chart_2, aes(x = bucket, y = prop, fill = orientation)) + 
+  geom_bar(stat = "identity", position = "dodge") +
   labs(x = "Age Bucket", y = "Proportion of Users", title = "Orientation by Age") +
   facet_wrap(~sex, ncol=1)
 ```
 
-A breakdown by age shows two interesting points. First, it appears that younger women represent a larger portion of the women who reported bisexual, as the proportion of bisexual women decreases across each age group. The proportion of gay women, however, remains relatively constant. Second, when looking at men, the proportions seem relatively constant over each age group except for one bump in the proportion of gay men in the 40-49 age range. It would be interesting to see if this is related to some larger trend or if it is just a result of this sample.
+A breakdown by age shows two interesting points. First, it appears that younger women represent a larger portion of the women who reported bisexual, as the proportion of bisexual women decreases across each age group. The proportion of gay women, however, remains relatively constant with exception to the youngest age group. Second, when looking at men, the proportions seem relatively constant over each age group except for one bump in the proportion of gay men in the 40-49 age range. It would be interesting to see if this is related to some larger trend or if it is just a result of this sample.
 
 ### Drinking
 
@@ -193,10 +213,15 @@ profiles_drinks <- q1_profiles %>%
                              "rarely/never" = "not at all")
   ) %>% 
   group_by(sex, orientation, drinks) %>% 
-  count(drinks)
+  summarise(n = n()) %>% 
+  mutate(
+    prop = n/sum(n),
+    prop = round(prop, 2)
+  )
 
-ggplot(data = profiles_drinks, aes(x = fct_reorder(f=orientation, x=n, fun=max), y = n, fill = drinks)) + 
-  geom_bar(stat = "identity", position = "fill") +
+ggplot(data = profiles_drinks, aes(x = fct_reorder(f=orientation, x=n, fun=max), 
+                                   y = prop, fill = drinks)) + 
+  geom_bar(stat = "identity", position = "dodge") +
   labs(x = "Orientation", y = "Proportion", title = "Drinking Habits by Sex & Orientation") +
   facet_wrap(~sex, ncol=1)
 ```
